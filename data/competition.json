@@ -1,0 +1,8 @@
+{
+  "season": "2024/2025",
+  "fixtures": [
+    {"round": 1, "opponent": "Blauw Wit", "date": "2024-09-03", "venue": "Home"},
+    {"round": 2, "opponent": "Fortuna", "date": "2024-09-10", "venue": "Away"},
+    {"round": 3, "opponent": "PKC", "date": "2024-09-17", "venue": "Home"}
+  ]
+}
