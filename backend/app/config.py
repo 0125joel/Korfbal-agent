@@ -2,8 +2,7 @@
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseSettings, Field
 
 
 class Settings(BaseSettings):
@@ -36,15 +35,15 @@ class Settings(BaseSettings):
         default=None, description="Optioneel basisadres voor frontend-API-calls."
     )
 
-    model_config = SettingsConfigDict(
-        env_prefix="KORFBAL_",
-        case_sensitive=False,
-    )
+    class Config:
+        env_prefix = "KORFBAL_"
+        case_sensitive = False
 
 
 def get_settings() -> Settings:
     """Returneert een singleton Settings-instance."""
-    return Settings()
+    # Pydantic cache is voldoende, maar expliciet voor duidelijkheid.
+    return Settings()  # type: ignore[call-arg]
 
 
 settings = get_settings()

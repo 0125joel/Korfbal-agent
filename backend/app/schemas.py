@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -59,38 +58,3 @@ class ModelInfo(BaseModel):
     version: str
     classes: List[str]
     confidence_threshold: float
-
-
-class EventType(str, Enum):
-    SHOT = "shot"
-    GOAL = "goal"
-    MISS = "miss"
-    REBOUND = "rebound"
-
-
-class Event(BaseModel):
-    event_type: EventType
-    x: float = Field(..., ge=0.0, le=1.0)
-    y: float = Field(..., ge=0.0, le=1.0)
-    ts_ms: int = Field(..., ge=0)
-    player_id: Optional[str] = Field(default=None)
-    payload: Optional[dict[str, Any]] = None
-
-
-class EventBatchRequest(BaseModel):
-    events: List[Event]
-
-
-class EventBatchResponse(BaseModel):
-    added: int
-
-
-class EventResetResponse(BaseModel):
-    removed: int
-
-
-class EventListResponse(BaseModel):
-    events: List[Event]
-    total: int
-    limit: int
-    offset: int

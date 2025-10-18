@@ -5,66 +5,27 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from fastapi import (
-    Body,
-    Depends,
-    FastAPI,
-    Header,
-    HTTPException,
-    Request,
-    WebSocket,
-    WebSocketDisconnect,
-    status,
-)
-from fastapi.exceptions import RequestValidationError
+from fastapi import Body, Depends, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import settings
-from .schemas import (
-    EventBatchRequest,
-    EventBatchResponse,
-    EventListResponse,
-    EventResetResponse,
-    FramePayload,
-    HeatmapResponse,
-    ModelInfo,
-    PlayerShot,
-    StatsResponse,
-)
+from .schemas import FramePayload, HeatmapResponse, ModelInfo, PlayerShot, StatsResponse
 from .services.analyzer import ShotAnalyzer, create_analyzer
-from .services.events import EventStore, event_store
 from .services.state import ShotStore, store
-from .settings import app_settings
 
 logging.basicConfig(level=getattr(logging, settings.log_level.upper(), "INFO"))
 LOGGER = logging.getLogger(__name__)
 
-SERVICE_NAME = "korfbal-live-analytics"
-SERVICE_VERSION = "1.0.0"
-
-cors_origins = app_settings.cors_origins or settings.cors_origins or ["*"]
-
-app = FastAPI(
-    title="Korfbal Live Analytics",
-    version=SERVICE_VERSION,
-    openapi_url=f"{settings.api_prefix}/openapi.json",
-)
+app = FastAPI(title="Korfbal Live Analytics", openapi_url=f"{settings.api_prefix}/openapi.json")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-LOGGER.info("CORS origins ingesteld op: %s", ", ".join(cors_origins))
-if app_settings.api_key:
-    LOGGER.info("API-sleutelbeveiliging geactiveerd voor event-endpoints")
-else:
-    LOGGER.warning(
-        "Geen API-sleutel ingesteld; event-endpoints staan open (ontwikkelmodus)"
-    )
 
 FRONTEND_DIR = Path(__file__).resolve().parents[3] / "frontend" / "out"
 if FRONTEND_DIR.exists():
@@ -86,19 +47,9 @@ async def get_analyzer(store: ShotStore = Depends(get_store)) -> ShotAnalyzer:
     return app.state.analyzer
 
 
-async def get_event_store() -> EventStore:
-    return event_store
-
-
-async def enforce_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
-    required_key = app_settings.api_key
-    if required_key and x_api_key != required_key:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
-
-
-@app.get("/healthz", include_in_schema=False)
-async def healthz() -> dict[str, object]:
-    return {"ok": True, "service": SERVICE_NAME, "version": SERVICE_VERSION}
+@app.get(f"{settings.api_prefix}/health", include_in_schema=False)
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
 
 
 @app.get(f"{settings.api_prefix}/model", response_model=ModelInfo)
@@ -143,9 +94,9 @@ async def websocket_frames(
     try:
         while True:
             payload = await websocket.receive_json()
-            frame = FramePayload.model_validate(payload)
+            frame = FramePayload.parse_obj(payload)
             shot = analyzer.analyze(frame)
-            await websocket.send_json({"shot": shot.model_dump() if shot else None})
+            await websocket.send_json({"shot": shot.dict() if shot else None})
     except WebSocketDisconnect:
         LOGGER.info("WebSocket afgesloten")
     except Exception as exc:  # pragma: no cover - runtime logging
@@ -154,52 +105,7 @@ async def websocket_frames(
         await websocket.close()
 
 
-@app.post(
-    f"{settings.api_prefix}/events/batch",
-    response_model=EventBatchResponse,
-    dependencies=[Depends(enforce_api_key)],
-)
-async def ingest_events(
-    payload: EventBatchRequest, store: EventStore = Depends(get_event_store)
-) -> EventBatchResponse:
-    added = store.add_many(payload.events)
-    return EventBatchResponse(added=added)
-
-
-@app.post(
-    f"{settings.api_prefix}/events/reset",
-    response_model=EventResetResponse,
-    dependencies=[Depends(enforce_api_key)],
-)
-async def reset_events(store: EventStore = Depends(get_event_store)) -> EventResetResponse:
-    removed = store.reset()
-    return EventResetResponse(removed=removed)
-
-
-@app.get(f"{settings.api_prefix}/events/all", response_model=EventListResponse)
-async def list_events(
-    limit: int = 100,
-    offset: int = 0,
-    store: EventStore = Depends(get_event_store),
-) -> EventListResponse:
-    limit = max(1, min(limit, 500))
-    offset = max(offset, 0)
-    events = store.list_events(limit=limit, offset=offset)
-    return EventListResponse(events=events, total=store.total, limit=limit, offset=offset)
-
-
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
-    LOGGER.debug("Validatiefout op %s: %s", request.url, exc)
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": exc.errors()},
-    )
-
-
 @app.exception_handler(Exception)
-async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    LOGGER.exception("Onverwachte fout op %s: %s", request.url, exc)
+async def unhandled_exception_handler(request, exc):  # type: ignore[override]
+    LOGGER.exception("Onverwachte fout: %s", exc)
     return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
