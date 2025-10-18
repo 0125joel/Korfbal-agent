@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.venv/
+.env
+
+# Node
+node_modules/
+.next/
+frontend/out/
+*.log
+
+# Model artefacten
+models/*.pt
+runs/
+
+# VSCode / IDE
+.vscode/
+.idea/
+.DS_Store

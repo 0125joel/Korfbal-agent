@@ -1,0 +1,5 @@
+# Hugging Face Spaces configuratie
+sdk: docker
+app_port: 7860
+entrypoint: uvicorn app.main:app --host 0.0.0.0 --port 7860
+hardware: gpu
