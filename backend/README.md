@@ -26,6 +26,9 @@ pip install --upgrade pip
 pip install -r requirements.txt
 Copy-Item .env.example .env
 # Pas de inhoud van .env aan indien nodig, bijvoorbeeld de API-sleutel of CORS-origins.
+# Wanneer je een `API_KEY` instelt moet je dezelfde waarde meesturen via de
+# `x-api-key` header voor POST-verzoeken naar `/api/events/batch` en
+# `/api/events/reset`.
 uvicorn app.main:app --host 127.0.0.1 --port 7860 --reload
 ```
 

@@ -59,6 +59,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 LOGGER.info("CORS origins ingesteld op: %s", ", ".join(cors_origins))
+if app_settings.api_key:
+    LOGGER.info("API-sleutelbeveiliging geactiveerd voor event-endpoints")
+else:
+    LOGGER.warning(
+        "Geen API-sleutel ingesteld; event-endpoints staan open (ontwikkelmodus)"
+    )
 
 FRONTEND_DIR = Path(__file__).resolve().parents[3] / "frontend" / "out"
 if FRONTEND_DIR.exists():
