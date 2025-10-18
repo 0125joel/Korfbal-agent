@@ -1,0 +1,25 @@
+{
+  "headline": "Eindtijd: 1 doelpunten (1e helft 1, 2e helft 0).",
+  "metrics": {
+    "events": 3,
+    "goals": 1,
+    "shots": 1,
+    "rebounds": 1
+  },
+  "status": "fulltime",
+  "halves": {
+    "1": {
+      "events": 2,
+      "goals": 1,
+      "shots": 1,
+      "rebounds": 0
+    },
+    "2": {
+      "events": 1,
+      "goals": 0,
+      "shots": 0,
+      "rebounds": 1
+    }
+  },
+  "top_scorer": "5"
+}
