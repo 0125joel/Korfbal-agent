@@ -1,0 +1,11 @@
+{
+  "team": "KV Oranje",
+  "coach": "J. Trainer",
+  "players": [
+    {"number": 1, "name": "A. Keeper", "position": "Keeper"},
+    {"number": 5, "name": "B. Schutter", "position": "Aanval"},
+    {"number": 7, "name": "C. Maker", "position": "Aanval"},
+    {"number": 8, "name": "D. Speler", "position": "Verdediging"},
+    {"number": 10, "name": "E. Leider", "position": "Midden"}
+  ]
+}
