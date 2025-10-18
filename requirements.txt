@@ -7,6 +7,7 @@ numpy
 # Optional pipeline dependencies (placeholders will work without them)
 faiss-cpu
 streamlink
+yt-dlp
 ultralytics
 opencv-python
 easyocr
